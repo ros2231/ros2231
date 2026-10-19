@@ -8,8 +8,9 @@
 <link rel="icon" href="icon-192.png">
 <title>MintLink</title>
 <style>
-:root{--bg:#0e2326;--card:#16343a;--line:#27505a;--tx:#e6f4ee;--mut:#8fb3ab;--ac:#9fe3bd;--on:#08231a;--hot:#ffc857;--bad:#ff8a7a}
-@media(prefers-color-scheme:light){:root{--bg:#eef5f1;--card:#fff;--line:#cfe0d8;--tx:#0e2326;--mut:#55756c;--ac:#1f7a55;--on:#fff;--hot:#c98a00;--bad:#c0392b}}
+:root{color-scheme:dark;--bg:#0e2326;--card:#16343a;--line:#27505a;--tx:#e6f4ee;--mut:#8fb3ab;--ac:#9fe3bd;--on:#08231a;--hot:#ffc857;--bad:#ff8a7a}
+:root[data-theme="light"]{color-scheme:light;--bg:#eef5f1;--card:#fff;--line:#cfe0d8;--tx:#0e2326;--mut:#55756c;--ac:#1f7a55;--on:#fff;--hot:#c98a00;--bad:#c0392b}
+@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#eef5f1;--card:#fff;--line:#cfe0d8;--tx:#0e2326;--mut:#55756c;--ac:#1f7a55;--on:#fff;--hot:#c98a00;--bad:#c0392b}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--tx);font:16px/1.4 ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;height:100dvh;padding-top:env(safe-area-inset-top)}
@@ -34,6 +35,7 @@ main{flex:1;min-height:0}
 .tab{display:none;height:100%;padding:12px;gap:10px;flex-direction:column;overflow:auto}.tab.on{display:flex}
 .row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:10px}
+.favorite-list{display:grid;gap:8px}.favorite-row{display:flex;gap:8px}.favorite-row button:first-child{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .big{font-size:46px;font-weight:700;text-align:center}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.grid button{padding:8px 2px;min-height:46px;font-size:14px}
 #pad{position:relative;flex:1;min-height:240px;border:1px solid var(--line);border-radius:28px;background:radial-gradient(120% 90% at 50% 0,var(--card),var(--bg));box-shadow:inset 0 0 0 6px var(--bg),inset 0 0 40px rgba(159,227,189,.08);display:grid;place-items:center;text-align:center;color:var(--mut);touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -68,6 +70,7 @@ summary{cursor:pointer;min-height:24px}
     </div>
     <div class="tab" id="t-keys">
       <textarea id="txt" rows="3" placeholder="Tap here and type. Text appears on your PC." autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+      <div class="mut small">PC shortcuts</div>
       <div class="grid" id="keys"></div>
     </div>
     <div class="tab" id="t-media">
@@ -83,10 +86,17 @@ summary{cursor:pointer;min-height:24px}
       <button id="cpaste">Paste from phone</button>
     </div>
     <div class="tab" id="t-screen">
+      <div class="card"><b>View the PC over Bluetooth</b>
+        <div class="row"><button class="pri" id="btstart">Start</button><button id="btstop">Stop</button></div>
+        <div id="btbox" hidden><img id="btimg" alt="Latest PC screen over Bluetooth" style="width:100%;display:block;background:#000;border-radius:12px"></div>
+        <p class="mut small" id="btmsg">Sends small screenshots over Bluetooth. Expect a slow refresh; no Wi-Fi is used.</p></div>
       <div class="card"><b>Share this phone's camera to the PC</b>
         <div class="row"><button class="pri" id="cstart">Start</button><button id="cflip">Flip</button><button id="cstop">Stop</button></div>
         <div id="cbox" hidden><video id="cprev" playsinline muted autoplay style="width:100%;border-radius:12px;background:#000"></video></div>
         <p class="mut small" id="cmsg">Sends small live pictures over Bluetooth to a window on your PC. Low frame rate; no internet, USB or Wi-Fi needed.</p></div>
+      <div class="card"><b>Share this phone's screen over Bluetooth</b>
+        <div class="row"><button class="pri" id="phscreenstart">Share screen</button><button id="phscreenstop">Stop</button></div>
+        <p class="mut small" id="phscreenmsg">Requires browser screen-capture support. Frames are compressed and sent over Bluetooth.</p></div>
       <details class="card"><summary><b>Other options (need USB or Wi-Fi)</b></summary>
       <div class="card"><b>Show this phone's screen on the PC</b>
         <div class="row"><button class="pri" id="pstart">Show on PC</button><button id="pstop">Stop</button></div>
@@ -103,7 +113,12 @@ summary{cursor:pointer;min-height:24px}
         <p class="mut small">To ring this phone: type <code>r</code> + Enter in the terminal running mintlink.py. Keep this app open.</p></div>
       <div class="card"><b>PC</b>
         <div class="row"><button data-a="lock">Lock</button><button data-a="sleep">Sleep</button></div>
-        <div class="row"><input id="url" placeholder="https://…" inputmode="url" aria-label="Link"><button id="open">Open on PC</button></div></div>
+        <div class="row"><input id="url" placeholder="https://…" inputmode="url" aria-label="Link"><button id="open">Open on PC</button></div>
+        <button id="theme">Theme: System</button></div>
+      <div class="card"><b>Quick links</b>
+        <div class="favorite-list" id="favorites"></div>
+        <div class="row"><input id="favName" maxlength="24" placeholder="Name" aria-label="Favorite name"><input id="favUrl" placeholder="https://…" inputmode="url" aria-label="Favorite URL"></div>
+        <button id="favAdd">Save quick link</button><p class="bad" id="favErr"></p></div>
     </div>
   </main>
   <nav>
@@ -143,7 +158,7 @@ function txb(bytes){const m=new Uint8Array(bytes.length+1);m[0]=1;m.set(bytes,1)
 function onTx(e){
   const v=new Uint8Array(e.target.value.buffer,e.target.value.byteOffset,e.target.value.byteLength);
   rbuf.push(...v.slice(1));
-  if(v[0]===61){const m=dec.decode(new Uint8Array(rbuf));rbuf=[];onMsg(m)}}
+  if(v[0]===61){const m=new Uint8Array(rbuf);rbuf=[];if(m[0]===2)btScreenFrame(m.slice(1));else onMsg(dec.decode(m))}}
 function onMsg(m){
   const c=m[0],a=m.slice(1);
   if(c==='A'){CH=Math.max(18,Math.min(244,(parseInt(a)||23)-4));$('#login').hidden=true;$('#app').hidden=false;dot(true);tx('?');clearInterval(tm);tm=setInterval(()=>tx('?'),10000)}
@@ -154,11 +169,12 @@ function onMsg(m){
   else if(c==='R')ring();
   else if(c==='H')screenOn(a);
   else if(c==='F')camAck();
-  else if(c==='J')$('#cmsg').textContent=a;
-  else if(c==='K'){camStop(true);$('#cmsg').textContent='Camera stopped by the PC.'}
+  else if(c==='J')$(cSharingScreen?'#phscreenmsg':'#cmsg').textContent=a;
+  else if(c==='K'){const screen=cSharingScreen;camStop(true);$(screen?'#phscreenmsg':'#cmsg').textContent='Sharing stopped by the PC.'}
   else if(c==='I'){$('#pmsg').textContent=a;toast(a)}
+  else if(c==='Y'){if(a.startsWith('Bluetooth screen share failed:'))btRunning=false;$('#btmsg').textContent=a;}
   else if(c==='X'){$('#smsg').textContent=a;toast(a)}}
-function lost(){screenOff();camStop(true);dot(false);clearInterval(tm);if(!$('#app').hidden){$('#app').hidden=true;$('#login').hidden=false;$('#err').textContent='Connection lost. Tap Connect.'}}
+function lost(){screenOff();btScreenStop(true);camStop(true);dot(false);clearInterval(tm);if(!$('#app').hidden){$('#app').hidden=true;$('#login').hidden=false;$('#err').textContent='Connection lost. Tap Connect.'}}
 async function setup(){
   const s=await(await dev.gatt.connect()).getPrimaryService(SVC);
   rx=await s.getCharacteristic(RX);const t=await s.getCharacteristic(TX);
@@ -180,7 +196,7 @@ function ring(){
 $('#stop').onclick=()=>{clearInterval(rt);$('#ring').hidden=true;navigator.vibrate&&navigator.vibrate(0)};
 
 $$('nav button').forEach(b=>b.onclick=()=>{
-  $$('nav button,.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(b.dataset.t!=='screen')screenOff();$('#t-'+b.dataset.t).classList.add('on')});
+  $$('nav button,.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(b.dataset.t!=='screen'){screenOff();btScreenStop(true)}$('#t-'+b.dataset.t).classList.add('on')});
 
 /* touchpad */
 const pad=$('#pad'),ptr=$('#ptr');let last,acc={x:0,y:0},t0=0,moved=0,fing=1,sc=0,drag=false;
@@ -196,7 +212,7 @@ pad.addEventListener('touchend',e=>{e.preventDefault();glow(e);if(e.touches.leng
 $('#drag').onclick=e=>{drag=!drag;tx(drag?'d1':'d0');e.target.textContent='Drag: '+(drag?'on':'off');e.target.classList.toggle('pri',drag)};
 
 /* keyboard */
-const K=[['Esc','Escape'],['Tab','Tab'],['⌫','BackSpace'],['⏎','Return'],['←','Left'],['↑','Up'],['↓','Down'],['→','Right'],['Del','Delete'],['Home','Home'],['End','End'],['PgUp','Prior'],['PgDn','Next'],['Ctrl C','ctrl+c'],['Ctrl V','ctrl+v'],['Ctrl X','ctrl+x'],['Ctrl A','ctrl+a'],['Ctrl Z','ctrl+z'],['Alt Tab','alt+Tab'],['Super','Super_L']];
+const K=[['Esc','Escape'],['Tab','Tab'],['⌫','BackSpace'],['⏎','Return'],['←','Left'],['↑','Up'],['↓','Down'],['→','Right'],['Del','Delete'],['Home','Home'],['End','End'],['PgUp','Prior'],['PgDn','Next'],['Ctrl C','ctrl+c'],['Ctrl V','ctrl+v'],['Ctrl X','ctrl+x'],['Ctrl A','ctrl+a'],['Ctrl Z','ctrl+z'],['Alt Tab','alt+Tab'],['Super','Super_L'],['Browser URL','ctrl+l'],['New tab','ctrl+t'],['Close tab','ctrl+w'],['Next tab','ctrl+Tab'],['Prev tab','ctrl+shift+Tab'],['Close window','alt+F4'],['Show desktop','Super+d'],['Screenshot','Print'],['Next workspace','ctrl+alt+Right'],['Prev workspace','ctrl+alt+Left']];
 $('#keys').innerHTML=K.map(([l,k])=>`<button data-k="${k}">${l}</button>`).join('');
 const txt=$('#txt');let prev='';
 txt.oninput=()=>{const v=txt.value;let i=0;while(i<prev.length&&i<v.length&&prev[i]===v[i])i++;
@@ -216,10 +232,11 @@ $('#cpaste').onclick=async()=>{try{$('#clip').value=await navigator.clipboard.re
 
 /* camera share: JPEG snapshots over BLE, one frame in flight (the PC answers each with 'F') */
 const cvid=$('#cvid'),cprev=$('#cprev'),ccv=document.createElement('canvas');
-let cstream=null,cfacing='environment',cq=.5,cw=320,con=false,ct0=0,cto,cwl=null;
+let cstream=null,cfacing='environment',cq=.5,cw=320,con=false,cSharingScreen=false,ct0=0,cto,cwl=null;
+function camStatus(message){$(cSharingScreen?'#phscreenmsg':'#cmsg').textContent=message}
 async function camStart(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('#cmsg').textContent='This browser page cannot use the camera.';return}
-  camStop(true);
+  camStop(true);cSharingScreen=false;
   try{
     cstream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cfacing,width:{ideal:640},height:{ideal:480}},audio:false});
     cvid.srcObject=cprev.srcObject=cstream;await cvid.play().catch(()=>{});
@@ -229,11 +246,11 @@ async function camStart(){
     tx('u1');clearTimeout(cto);cto=setTimeout(()=>{if(con&&!ct0)$('#cmsg').textContent='No answer from the PC. Is MintLink still connected?'},5000);
   }catch(e){$('#cmsg').textContent='Camera error: '+(e.name==='NotAllowedError'?'permission denied':e.message)}}
 function camStop(quiet){
-  const was=con;con=false;clearTimeout(cto);
+  const was=con,wasScreen=cSharingScreen;con=false;clearTimeout(cto);
   if(cstream){cstream.getTracks().forEach(t=>t.stop());cstream=null}
   cvid.srcObject=cprev.srcObject=null;$('#cbox').hidden=true;
   if(cwl){cwl.release().catch(()=>{});cwl=null}
-  if(!quiet){tx('u0');$('#cmsg').textContent='Camera stopped.'}else if(was&&dev&&dev.gatt.connected)tx('u0')}
+  if(!quiet){tx('u0');$(wasScreen?'#phscreenmsg':'#cmsg').textContent=wasScreen?'Screen share stopped.':'Camera stopped.'}else if(was&&dev&&dev.gatt.connected)tx('u0');cSharingScreen=false}
 function camSend(){
   if(!con)return;
   if(!cvid.videoWidth){cto=setTimeout(camSend,200);return}
@@ -248,11 +265,24 @@ function camAck(){
   if(ct0){const rtt=performance.now()-ct0;ct0=0;
     if(rtt>1500){cq=Math.max(.25,cq-.08);if(cq<=.3)cw=Math.max(160,cw-40)}
     else if(rtt<500){cq=Math.min(.7,cq+.05);if(cq>=.6)cw=Math.min(480,cw+40)}
-    $('#cmsg').textContent='Sending '+(1000/Math.max(rtt,1)).toFixed(1)+' frames/s · '+cw+'px'}
+    camStatus('Sending '+(1000/Math.max(rtt,1)).toFixed(1)+' frames/s · '+cw+'px')}
   setTimeout(camSend,0)}
 $('#cstart').onclick=camStart;
 $('#cstop').onclick=()=>camStop(false);
 $('#cflip').onclick=()=>{cfacing=cfacing==='environment'?'user':'environment';if(con)camStart()};
+async function phoneScreenStart(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){$('#phscreenmsg').textContent='This browser does not support screen capture. Use Show on PC with USB instead.';return}
+  camStop(true);cSharingScreen=true;cq=.28;cw=200;
+  try{
+    cstream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:2,max:4}},audio:false});
+    cvid.srcObject=cstream;await cvid.play().catch(()=>{});con=true;ct0=0;
+    cstream.getVideoTracks()[0].addEventListener('ended',()=>camStop(false),{once:true});
+    camStatus('Starting Bluetooth screen share…');
+    try{cwl=await navigator.wakeLock.request('screen')}catch{}
+    tx('u1s');clearTimeout(cto);cto=setTimeout(()=>{if(con&&!ct0)camStatus('No response from the PC. Is MintLink connected?')},5000)
+  }catch(e){cSharingScreen=false;camStatus('Screen capture failed: '+(e.name==='NotAllowedError'?'permission denied or cancelled':e.message))}}
+$('#phscreenstart').onclick=phoneScreenStart;
+$('#phscreenstop').onclick=()=>camStop(false);
 
 /* screen share: Bluetooth only carries the handshake; video is an HTTPS MJPEG stream over Wi-Fi */
 const simg=$('#simg');
@@ -265,6 +295,19 @@ simg.onerror=()=>{if(simg.getAttribute('src'))$('#smsg').textContent='Could not 
 simg.onclick=()=>{simg.requestFullscreen&&simg.requestFullscreen()};
 $('#sstart').onclick=()=>{$('#smsg').textContent='Asking your PC…';tx('h1')};
 $('#sstop').onclick=()=>{screenOff();$('#smsg').textContent='Stopped.'};
+const btimg=$('#btimg');let btRunning=false,btObjectUrl='';
+function btScreenFrame(bytes){
+  if(!btRunning)return;
+  const next=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
+  btimg.onload=()=>{if(btObjectUrl)URL.revokeObjectURL(btObjectUrl);btObjectUrl=next;tx('b')};
+  btimg.onerror=()=>{URL.revokeObjectURL(next);if(btRunning)tx('b')};
+  btimg.src=next;$('#btbox').hidden=false;$('#btmsg').textContent='Receiving PC screenshots over Bluetooth…'}
+function btScreenStop(quiet){
+  if(btRunning&&dev&&dev.gatt.connected)tx('b0');btRunning=false;btimg.removeAttribute('src');$('#btbox').hidden=true;
+  if(btObjectUrl){URL.revokeObjectURL(btObjectUrl);btObjectUrl=''}
+  if(!quiet)$('#btmsg').textContent='Stopped.'}
+$('#btstart').onclick=()=>{if(btRunning)return;btRunning=true;$('#btmsg').textContent='Requesting first screenshot…';tx('b1')};
+$('#btstop').onclick=()=>btScreenStop(false);
 
 $('#pstart').onclick=()=>{$('#pmsg').textContent='Asking your PC…';tx('p1')};
 $('#pstop').onclick=()=>tx('p0');
@@ -272,6 +315,26 @@ $('#pstop').onclick=()=>tx('p0');
 /* more */
 $('#open').onclick=()=>tx('o'+$('#url').value.trim());
 const A={ringpc:'r',lock:'l',sleep:'z'};
+const favKey='mintlink-favorites';
+function getFavorites(){try{const v=JSON.parse(localStorage.getItem(favKey)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x.name==='string'&&typeof x.url==='string').slice(0,8):[]}catch{return []}}
+function renderFavorites(){const box=$('#favorites');box.replaceChildren();getFavorites().forEach((f,i)=>{
+  const row=document.createElement('div'),open=document.createElement('button'),remove=document.createElement('button');
+  row.className='favorite-row';open.textContent=f.name;open.title=f.url;open.setAttribute('aria-label','Open '+f.name+' on PC');open.onclick=()=>tx('o'+f.url);
+  remove.textContent='Remove';remove.setAttribute('aria-label','Remove '+f.name);remove.onclick=()=>{const list=getFavorites();list.splice(i,1);localStorage.setItem(favKey,JSON.stringify(list));renderFavorites()};
+  row.append(open,remove);box.append(row)});
+  if(!box.childElementCount){const empty=document.createElement('span');empty.className='mut small';empty.textContent='No saved links yet.';box.append(empty)}}
+$('#favAdd').onclick=()=>{const name=$('#favName').value.trim(),value=$('#favUrl').value.trim();let url;
+  try{url=new URL(value)}catch{$('#favErr').textContent='Enter a valid http or https link.';return}
+  if(!['http:','https:'].includes(url.protocol)){$('#favErr').textContent='Only http and https links are supported.';return}
+  const list=getFavorites();if(!name){$('#favErr').textContent='Add a name for this link.';return}
+  if(list.length>=8){$('#favErr').textContent='You can save up to 8 quick links.';return}
+  list.push({name:name.slice(0,24),url:url.href});localStorage.setItem(favKey,JSON.stringify(list));$('#favName').value=$('#favUrl').value='';$('#favErr').textContent='';renderFavorites()};
+renderFavorites();
+const themeModes=['system','light','dark'];let themeMode=localStorage.getItem('mintlink-theme')||'system';
+function setTheme(mode){themeMode=mode;if(mode==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=mode;
+  localStorage.setItem('mintlink-theme',mode);$('#theme').textContent='Theme: '+mode[0].toUpperCase()+mode.slice(1)}
+setTheme(themeModes.includes(themeMode)?themeMode:'system');
+$('#theme').onclick=()=>setTheme(themeModes[(themeModes.indexOf(themeMode)+1)%themeModes.length]);
 document.addEventListener('click',e=>{
   ac&&ac.state==='suspended'&&ac.resume();
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
